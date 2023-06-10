@@ -60,7 +60,6 @@ def spawn_worker():
         MinCount=1,
         MaxCount=1,
         SecurityGroupIds=['my-sg-N'],
-        SubnetId='subnet-0ed551442172c6d19'
     )[0]
 
     # Wait until the instance is running
