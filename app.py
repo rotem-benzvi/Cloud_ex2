@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 from queue import Queue
+import boto3
+import paramiko
 
 app = Flask(__name__)
 
@@ -8,6 +10,8 @@ workQueue = Queue()
 workComplete = []
 maxNumOfWorkers = 0
 numOfWorkers = 0
+ec2 = boto3.client('ec2')
+ec2_resource = boto3.resource('ec2')
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
@@ -35,11 +39,7 @@ def pull_complete(n):
         except:
             pass
     return jsonify(results), 200
-import boto3
-import paramiko
 
-ec2 = boto3.client('ec2')
-ec2_resource = boto3.resource('ec2')
 
 def spawn_worker():
     global numOfWorkers
