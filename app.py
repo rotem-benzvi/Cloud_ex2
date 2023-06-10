@@ -1,13 +1,19 @@
 from flask import Flask, request, jsonify, render_template
 from datetime import datetime, timedelta
 from queue import Queue
+import boto3
+import paramiko
 
 app = Flask(__name__)
 
 workQueue = Queue()
 workComplete = []
-maxNumOfWorkers = 0
+maxNumOfWorkers = 2
 numOfWorkers = 0
+
+region_name = 'eu-west-1'
+ec2_client = boto3.client('ec2', region_name=region_name)
+ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
@@ -45,6 +51,35 @@ def pull_complete():
 def spawn_worker():
     global numOfWorkers
     # Implement spawning of worker logic here
+
+    # Create a new EC2 instance
+    instance = ec2_resource.create_instances(
+        ImageId='ami-00aa9d3df94c6c354',
+        InstanceType='t2.micro',
+        KeyName='worker_1_key',
+        MinCount=1,
+        MaxCount=1,
+        SecurityGroupIds=['my-sg-N'],
+        SubnetId='subnet-0ed551442172c6d19'
+    )[0]
+
+    # Wait until the instance is running
+    instance.wait_until_running()
+
+    # Retrieve the public IP address of the instance
+    instance.load()
+    public_ip = instance.public_ip_address
+
+    # SSH into the instance and deploy the Flask app
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(public_ip, username='your_username', key_filename='your_private_key.pem')
+
+    # Copy your Flask app code to the EC2 instance (e.g., using SCP)
+    # Execute commands to set up the environment and run the Flask app
+    # Close the SSH connection
+
+    # Update the worker count
     numOfWorkers += 1
 
 def timer_10_sec_describe_instances():
@@ -55,12 +90,13 @@ def timer_10_sec_describe_instances():
             spawn_worker()
 
 def timer_10_sec():
-    if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
-        if numOfWorkers < maxNumOfWorkers:
-            spawn_worker()
-        else:
-            if otherNode.TryGetNodeQuota():
-                maxNumOfWorkers += 1
+    while True:
+        if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
+            if numOfWorkers < maxNumOfWorkers:
+                spawn_worker()
+            # else:
+            #     if otherNode.TryGetNodeQuota():
+            #         maxNumOfWorkers += 1
 
 def try_get_node_quota():
     global maxNumOfWorkers
@@ -69,5 +105,12 @@ def try_get_node_quota():
         return True
     return False
 
-if __name__ == '__main__':
-    app.run()
+spawn_worker()
+
+# if __name__ == '__main__':
+#     # Start the timer_10_sec thread in the background
+#     # timer_thread = threading.Thread(target=timer_10_sec)
+#     # timer_thread.daemon = True
+#     # timer_thread.start()
+#     spawn_worker()
+#     # app.run()
