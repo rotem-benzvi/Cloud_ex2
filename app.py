@@ -10,8 +10,9 @@ workQueue = Queue()
 workComplete = []
 maxNumOfWorkers = 0
 numOfWorkers = 0
-ec2 = boto3.client('ec2')
-ec2_resource = boto3.resource('ec2')
+region_name = 'eu-west-1'
+ec2_client = boto3.client('ec2', region_name=region_name)
+ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
