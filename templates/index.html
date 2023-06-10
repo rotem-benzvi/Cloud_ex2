@@ -6,27 +6,27 @@
 <body>
     <h1>Work Queue</h1>
 
-    <form action="/enqueue" method="POST">
+    <form action="/enqueueWork" method="POST">
         <label for="iterations">Iterations:</label>
         <input type="text" id="iterations" name="iterations" required><br><br>
-        <label for="data">Data:</label>
-        <textarea id="data" name="data" required></textarea><br><br>
+        <label for="text">Text:</label>
+        <textarea id="text" name="text" required></textarea><br><br>
         <button type="submit">Enqueue</button>
     </form>
 
     <hr>
 
-    <form action="/pullCompleted" method="POST">
-        <label for="top">Top:</label>
-        <input type="text" id="top" name="top" required><br><br>
+    <form action="/pullComplete" method="POST">
+        <label for="n">Top:</label>
+        <input type="text" id="n" name="n" required><br><br>
         <button type="submit">Pull Completed</button>
     </form>
 
     <h2>Completed Work Items:</h2>
     <ul>
         {% for work in completed_work %}
-        <li>Work ID: {{ work.id }}</li>
-        <li>Result: {{ work.result }}</li>
+        <li>Text: {{ work[0] }}</li>
+        <li>Iterations: {{ work[1] }}</li>
         {% endfor %}
     </ul>
 </body>

@@ -1,8 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from datetime import datetime, timedelta
 from queue import Queue
-import boto3
-import paramiko
 
 app = Flask(__name__)
 
@@ -10,20 +8,22 @@ workQueue = Queue()
 workComplete = []
 maxNumOfWorkers = 0
 numOfWorkers = 0
-region_name = 'eu-west-1'
-ec2_client = boto3.client('ec2', region_name=region_name)
-ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
-@app.route('/enqueue', methods=['POST'])
-def enqueue():
-    text = request.json['text']
-    iterations = request.json['iterations']
+@app.route('/')
+def index():
+    completed_work = workComplete
+    return render_template('index.html', completed_work=completed_work)
+
+@app.route('/enqueueWork', methods=['POST'])
+def enqueue_work():
+    text = request.form['text']
+    iterations = request.form['iterations']
     workQueue.put((text, iterations, datetime.now()))
     return jsonify({'message': 'Work enqueued successfully.'}), 200
 
-@app.route('/giveMeWork', methods=['GET'])
+@app.route('/giveMeWork', methods=['POST'])
 def give_me_work():
     if not workQueue.empty():
         work = workQueue.get()
@@ -31,49 +31,20 @@ def give_me_work():
     else:
         return jsonify({'message': 'No work available.'}), 204
 
-@app.route('/pullComplete/<int:n>', methods=['GET'])
-def pull_complete(n):
+@app.route('/pullComplete', methods=['POST'])
+def pull_complete():
+    n = int(request.form['n'])
     results = workComplete[:n]
-    if len(results) < n:
-        try:
-            results.extend(otherNode.pullCompleteInternal(n - len(results)))
-        except:
-            pass
+    # if len(results) < n:
+    #     try:
+    #         results.extend(otherNode.pullCompleteInternal(n - len(results)))
+    #     except:
+    #         pass
     return jsonify(results), 200
-
 
 def spawn_worker():
     global numOfWorkers
     # Implement spawning of worker logic here
-
-    # Create a new EC2 instance
-    instance = ec2_resource.create_instances(
-        ImageId='ami-00aa9d3df94c6c354',
-        InstanceType='t2.micro',
-        KeyName='worker_1_key',
-        MinCount=1,
-        MaxCount=1,
-        SecurityGroupIds=['your_security_group_id'],
-        SubnetId='subnet-0ed551442172c6d19'
-    )[0]
-
-    # Wait until the instance is running
-    instance.wait_until_running()
-
-    # Retrieve the public IP address of the instance
-    instance.load()
-    public_ip = instance.public_ip_address
-
-    # SSH into the instance and deploy the Flask app
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(public_ip, username='your_username', key_filename='your_private_key.pem')
-
-    # Copy your Flask app code to the EC2 instance (e.g., using SCP)
-    # Execute commands to set up the environment and run the Flask app
-    # Close the SSH connection
-
-    # Update the worker count
     numOfWorkers += 1
 
 def timer_10_sec_describe_instances():
