@@ -16,8 +16,8 @@ ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
-@app.route('/enqueueWork', methods=['POST'])
-def enqueue_work():
+@app.route('/enqueue', methods=['POST'])
+def enqueue():
     text = request.json['text']
     iterations = request.json['iterations']
     workQueue.put((text, iterations, datetime.now()))
