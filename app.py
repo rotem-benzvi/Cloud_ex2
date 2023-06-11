@@ -52,12 +52,20 @@ def spawn_worker(node_public_ip):
     global numOfWorkers
     # Create a new EC2 instance
     instance = ec2_resource.create_instances(
-        ImageId='ami-00aa9d3df94c6c354',
+        ImageId='ami-0e9128c6f36377edc',
         InstanceType='t2.micro',
         KeyName='worker_1_key',
         MinCount=1,
         MaxCount=1,
         SecurityGroupIds=['my-sg-N'],
+        UserData='''#!/bin/bash
+            sudo apt update
+            sudo apt install python3-flask -y
+            sudo apt install python3-pip -y
+            sudo pip3 install --upgrade pip
+            FLASK_APP="app.py"
+            nohup flask run --host=0.0.0.0 --port=5000 &>/dev/null &
+         ''',
     )[0]
 
     # Wait until the instance is running
@@ -66,14 +74,6 @@ def spawn_worker(node_public_ip):
     # Retrieve the public IP address of the instance
     instance.load()
     public_ip = instance.public_ip_address
-
-    # SSH into the instance and deploy the Flask app
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(public_ip, username='ubuntu', key_filename='worker_1_key.pem')
-
-    # Close the SSH connection
-    ssh_client.close()
 
     # Update the worker count
     numOfWorkers += 1
