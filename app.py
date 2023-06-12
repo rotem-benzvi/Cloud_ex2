@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from queue import Queue
 import boto3
 import paramiko
+import urllib.request
+
 
 app = Flask(__name__)
 
@@ -47,24 +49,31 @@ def pull_complete():
     #         pass
     return jsonify(results), 200
 
+@app.route('/workComplete', methods=['POST'])
+def work_complete():
+    result = request.get_json()  # Get the result sent by the worker
+    workComplete.append(result)  # Add the result to the workComplete list
+    return jsonify({'message': 'Work completed successfully.'}), 200
+
 def spawn_worker():
     global numOfWorkers
+    user_data_script = '''#!/bin/bash
+        cd /home/ubuntu
+        python3 worker.py {ip_value}
+        '''
+    # Usage
+    node_public_ip = get_public_ip()
+    print("public ip: ", node_public_ip)
+
     # Create a new EC2 instance
     instance = ec2_resource.create_instances(
-        ImageId='ami-0e9128c6f36377edc',
+        ImageId='ami-0178ec22eb0d58e08',
         InstanceType='t2.micro',
         KeyName='worker_1_key',
         MinCount=1,
         MaxCount=1,
         SecurityGroupIds=['my-sg-N'],
-        UserData='''#!/bin/bash
-            sudo apt update
-            sudo apt install python3-flask -y
-            sudo apt install python3-pip -y
-            sudo pip3 install --upgrade pip
-            FLASK_APP="app.py"
-            nohup flask run --host=0.0.0.0 --port=5000 &>/dev/null &
-         ''',
+        UserData=user_data_script.format(ip=node_public_ip),
     )[0]
 
     # Wait until the instance is running
@@ -96,6 +105,13 @@ def try_get_node_quota():
         maxNumOfWorkers -= 1
         return True
     return False
+
+def get_public_ip():
+    url = 'https://checkip.amazonaws.com'
+    with urllib.request.urlopen(url) as response:
+        public_ip = response.read().decode('utf-8').strip()
+    return public_ip
+
 
 spawn_worker()
 
