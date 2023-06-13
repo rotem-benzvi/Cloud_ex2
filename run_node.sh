@@ -2,6 +2,8 @@
 
 echo "Install: apt update"
 apt update
+echo "Install: python3"
+apt install python3 -y
 echo "Install: python3-flask"
 apt install python3-flask -y
 echo "Install: python3-pip"
@@ -32,7 +34,7 @@ FLASK_APP="app.py"
 export FLASK_RUN_PORT=5000
 export FLASK_RUN_HOST="0.0.0.0"
 #nohup flask run --host=0.0.0.0 --port=5000 &>/dev/null &
-nohup python app.py -name {{NAME}} -kind {{KIND}} &>/var/log/pythonlogs.txt &
+nohup python3 app.py -name {{NAME}} -kind {{KIND}} &>/var/log/pythonlogs.txt &
 
 echo "done"
 exit
