@@ -29,7 +29,8 @@ echo "made it"
 # run app
 cd Cloud_ex2/
 FLASK_APP="app.py"
-nohup flask run -name {{NAME}} -kind {{KIND}} --host=0.0.0.0 --port=5000 &>/dev/null &
+#nohup flask run -name {{NAME}} -kind {{KIND}} --host=0.0.0.0 --port=5000 &>/dev/null &
+nohup python app.py -name {{NAME}} -kind {{KIND}} &>/dev/null &
 
 echo "done"
 exit
