@@ -64,24 +64,47 @@ def pull_complete():
     #         pass
     return jsonify(results), 200
 
+@app.route('/spawn_worker', methods=['POST'])
 def spawn_worker():
     global numOfWorkers
     global ec2_resource
     # Create a new EC2 instance
     instance = ec2_resource.create_instances(
-        ImageId='ami-0e9128c6f36377edc',
+        ImageId='ami-00aa9d3df94c6c354',
         InstanceType='t2.micro',
-        KeyName='worker_1_key',
+        KeyName='eladkey',
         MinCount=1,
         MaxCount=1,
         SecurityGroupIds=['my-sg-N'],
         UserData='''#!/bin/bash
-            sudo apt update
-            sudo apt install python3-flask -y
-            sudo apt install python3-pip -y
-            sudo pip3 install --upgrade pip
+
+            echo "Install: apt update"
+            apt update
+            echo "Install: python3"
+            apt install python3 -y
+            echo "Install: python3-flask"
+            apt install python3-flask -y
+            echo "Install: python3-pip"
+            apt install python3-pip -y
+            echo "Install: upgrade pip"
+            pip3 install --upgrade pip
+            echo "Install: awscli"
+            pip3 install awscli
+            echo "Install: boto3"
+            pip3 install boto3 
+            echo "Install: paramiko"
+            pip3 install paramiko
+            echo "Install: Done"
+
+            git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
+
+            cd Cloud_ex2/
+
             FLASK_APP="app.py"
-            nohup flask run --host=0.0.0.0 --port=5000 &>/dev/null &
+            nohup python3 app.py -name endpoint_node1 -kind EndpointNode &>/var/log/pythonlogs.txt &
+            
+            echo "done"
+            exit
          ''',
     )[0]
 
@@ -90,6 +113,8 @@ def spawn_worker():
 
     # Update the worker count
     numOfWorkers += 1
+
+    return jsonify({'instance_id': instance.id}), 200
       
 
 def timer_10_sec_describe_instances():

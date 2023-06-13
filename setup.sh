@@ -30,6 +30,17 @@ aws ec2 authorize-security-group-ingress        \
     --group-name $SEC_GRP --port 5000 --protocol tcp \
     --cidr $MY_IP/32
 
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+
+aws iam create-policy \
+  --policy-name EC2InstanceManagementPolicy \
+  --policy-document file://policy.json
+
+aws iam attach-role-policy \
+  --role-name EC2InstanceManagementRole \
+  --policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/EC2InstanceManagementPolicy
+
+
 UBUNTU_22_04_AMI="ami-00aa9d3df94c6c354"
 
 NAME="endpoint_node1"
@@ -43,6 +54,7 @@ RUN_INSTANCES=$(aws ec2 run-instances       \
     --key-name $KEY_NAME                    \
     --security-groups $SEC_GRP              \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$NAME},{Key=Type,Value=$KIND}]" \
+    --iam-instance-profile Name=EC2InstanceManagementRole \
     --user-data file://run_node1.sh)
 
 INSTANCE_ID=$(echo $RUN_INSTANCES | jq -r '.Instances[0].InstanceId')
