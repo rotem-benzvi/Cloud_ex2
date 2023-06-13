@@ -144,6 +144,14 @@ print("I've made it here")
 
 #spawn_worker()
 
+def get_public_ip():
+    url = 'https://checkip.amazonaws.com'
+    with urllib.request.urlopen(url) as response:
+        public_ip = response.read().decode('utf-8').strip()
+    return public_ip
+
+
+
 if __name__ == '__main__':
     # Start the timer_10_sec thread in the background
     # timer_thread = threading.Thread(target=timer_10_sec)
