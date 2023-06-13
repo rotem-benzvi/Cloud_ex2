@@ -1,4 +1,4 @@
-KEY_NAME="{your_key_name}"
+KEY_NAME="eladkey"
 KEY_PEM="$KEY_NAME.pem"
 
 echo "create key pair $KEY_PEM to connect to instances and save locally"
@@ -30,19 +30,41 @@ aws ec2 authorize-security-group-ingress        \
     --group-name $SEC_GRP --port 5000 --protocol tcp \
     --cidr $MY_IP/32
 
+#aws iam create-role                      \
+#    --role-name ec2-permissions-role     \
+#    --assume-role-policy-document file://trust-policy.json
+
+#aws iam put-role-policy                          \
+#    --role-name ec2-permissions-role             \
+#    --policy-name ec2-permissions-policy         \ 
+#    --policy-document file://ec2-permissions-policy.json
+
+#EC2_ROLE_ARN=$(aws iam get-role --role-name ec2-permissions-role --query "Role.Arn" --output text)
+
 UBUNTU_22_04_AMI="ami-00aa9d3df94c6c354"
 
+NAME="endpoint_node1"
+KIND='EndpointNode'
+sed -e "s/{{NAME}}/$NAME/" -e "s/{{KIND}}/$KIND/" run_node.sh > run_node1.sh
+
+
+# to enable back ARN role need to add: -iam-instance-profile Arn=$EC2_ROLE_ARN \
 echo "Creating Ubuntu 22.04 instance..."
-RUN_INSTANCES=$(aws ec2 run-instances   \
-    --image-id $UBUNTU_22_04_AMI        \
-    --instance-type t2.micro            \
-    --key-name $KEY_NAME                \
-    --security-groups $SEC_GRP)
+RUN_INSTANCES=$(aws ec2 run-instances       \
+    --image-id $UBUNTU_22_04_AMI            \
+    --instance-type t2.micro                \
+    --key-name $KEY_NAME                    \
+    --security-groups $SEC_GRP              \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$NAME},{Key=Type,Value=$KIND}]" \
+    --user-data file://run_node1.sh)
 
 INSTANCE_ID=$(echo $RUN_INSTANCES | jq -r '.Instances[0].InstanceId')
 
 echo "Waiting for instance creation..."
 aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+echo "Waiting for instance status..."
+aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
+
 
 PUBLIC_IP=$(aws ec2 describe-instances  --instance-ids $INSTANCE_ID | 
     jq -r '.Reservations[0].Instances[0].PublicIpAddress'
@@ -51,29 +73,7 @@ PUBLIC_IP=$(aws ec2 describe-instances  --instance-ids $INSTANCE_ID |
 echo "New instance $INSTANCE_ID @ $PUBLIC_IP"
 
 echo "setup production environment"
-ssh -i $KEY_PEM -o "StrictHostKeyChecking=no" -o "ConnectionAttempts=10" ubuntu@$PUBLIC_IP <<EOF
-    sudo apt update
-    sudo apt install python3-flask -y
-    sudo apt install python3-pip -y
-    sudo pip3 install --upgrade pip
-    sudo pip3 install awscli
-    pip3 install boto3 
-    pip3 install paramiko
-
-    # Configure AWS CLI with access key ID and secret access key
-    aws configure set aws_access_key_id "KEY_ID"
-    aws configure set aws_secret_access_key "KEY"
-    # Set the AWS default region (optional)
-    aws configure set default.region "eu-west-1"
-
-    git clone https://github.com/rotem-benzvi/Cloud_ex2.git
-
-    # run app
-    cd Cloud_ex2/
-    FLASK_APP="app.py"
-    nohup flask run --host=0.0.0.0 --port=5000 &>/dev/null &
-    exit
-EOF
+echo "ssh -i $KEY_PEM -o 'StrictHostKeyChecking=no' -o 'ConnectionAttempts=10' ubuntu@$PUBLIC_IP"
 
 echo "test that it all worked"
 curl  --retry-connrefused --retry 10 --retry-delay 60  http://$PUBLIC_IP:5000
