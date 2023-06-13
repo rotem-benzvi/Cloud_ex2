@@ -12,15 +12,16 @@ maxNumOfWorkers = 2
 numOfWorkers = 0
 
 Name = 'DeafultName'
+Kind = 'DefaultKind'
 
 region_name = 'eu-west-1'
 ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
-@app.route('/getName', methods=['GET'])
-def get_name():
-    return jsonify({'name': Name}), 200
+@app.route('/getArguments', methods=['GET'])
+def get_arguments():
+    return jsonify({'name': Name, 'kind:': Kind}), 200
 
 @app.route('/')
 def index():
@@ -114,4 +115,13 @@ if __name__ == '__main__':
     # timer_thread.daemon = True
     # timer_thread.start()
     # spawn_worker()
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument('-name')
+    parser.add_argument('-kind')
+    args = parser.parse_args()
+    Name = args.name
+    Kind = args.kind
+
     app.run()

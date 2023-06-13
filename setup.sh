@@ -32,13 +32,17 @@ aws ec2 authorize-security-group-ingress        \
 
 UBUNTU_22_04_AMI="ami-00aa9d3df94c6c354"
 
+NAME="endpoint_node1"
+KIND='EndpointNode'
+ENDPOINT1=$(sed -e "s/{{NAME}}/$NAME/" -e "s/{{KIND}}/$KIND/" run_node.sh)
+
 echo "Creating Ubuntu 22.04 instance..."
 RUN_INSTANCES=$(aws ec2 run-instances       \
     --image-id $UBUNTU_22_04_AMI            \
     --instance-type t2.micro                \
     --key-name $KEY_NAME                    \
     --security-groups $SEC_GRP              \
-    --user-data file://run_node.sh)
+    --user-data $ENDPOINT1)
 
 INSTANCE_ID=$(echo $RUN_INSTANCES | jq -r '.Instances[0].InstanceId')
 
