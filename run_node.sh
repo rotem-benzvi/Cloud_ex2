@@ -22,7 +22,7 @@ echo "Install: Done"
 # Set the AWS default region (optional)
 # aws configure set default.region "{{REGION}}"
 
-git clone https://github.com/rotem-benzvi/Cloud_ex2.git
+git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
 
 echo "made it"
 
