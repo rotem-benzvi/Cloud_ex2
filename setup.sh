@@ -34,7 +34,7 @@ UBUNTU_22_04_AMI="ami-00aa9d3df94c6c354"
 
 NAME="endpoint_node1"
 KIND='EndpointNode'
-ENDPOINT1=$(sed -e "s/{{NAME}}/$NAME/" -e "s/{{KIND}}/$KIND/" run_node.sh)
+sed -e "s/{{NAME}}/$NAME/" -e "s/{{KIND}}/$KIND/" run_node.sh > run_node1.sh
 
 echo "Creating Ubuntu 22.04 instance..."
 RUN_INSTANCES=$(aws ec2 run-instances       \
@@ -42,12 +42,14 @@ RUN_INSTANCES=$(aws ec2 run-instances       \
     --instance-type t2.micro                \
     --key-name $KEY_NAME                    \
     --security-groups $SEC_GRP              \
-    --user-data $ENDPOINT1)
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$NAME},{Key=Type,Value=$KIND}]" \
+    --user-data file://run_node1.sh)
 
 INSTANCE_ID=$(echo $RUN_INSTANCES | jq -r '.Instances[0].InstanceId')
 
 echo "Waiting for instance creation..."
 aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+echo "Waiting for instance status..."
 aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
 
 

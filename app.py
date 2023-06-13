@@ -3,8 +3,18 @@ from datetime import datetime, timedelta
 from queue import Queue
 import boto3
 import paramiko
+import argparse
 
 app = Flask(__name__)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-kind', help='Specify the kind')
+parser.add_argument('-name', help='Specify the name')
+args = parser.parse_args()
+
+# Access the value of the 'kind' argument
+kind = args.kind
+Name = args.name
 
 workQueue = Queue()
 workComplete = []
@@ -115,13 +125,4 @@ if __name__ == '__main__':
     # timer_thread.daemon = True
     # timer_thread.start()
     # spawn_worker()
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser()
-    parser.add_argument('-name')
-    parser.add_argument('-kind')
-    args = parser.parse_args()
-    Name = args.name
-    Kind = args.kind
-
     app.run()
