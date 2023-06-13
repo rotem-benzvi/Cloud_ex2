@@ -11,10 +11,16 @@ workComplete = []
 maxNumOfWorkers = 2
 numOfWorkers = 0
 
+Name = 'DeafultName'
+
 region_name = 'eu-west-1'
 ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
+
+@app.route('/getName', methods=['GET'])
+def get_name():
+    return jsonify({'name': Name}), 200
 
 @app.route('/')
 def index():
@@ -49,6 +55,7 @@ def pull_complete():
 
 def spawn_worker():
     global numOfWorkers
+    global ec2_resource
     # Create a new EC2 instance
     instance = ec2_resource.create_instances(
         ImageId='ami-0e9128c6f36377edc',
@@ -97,12 +104,14 @@ def try_get_node_quota():
         return True
     return False
 
-spawn_worker()
+print("I've made it here")
 
-# if __name__ == '__main__':
-#     # Start the timer_10_sec thread in the background
-#     # timer_thread = threading.Thread(target=timer_10_sec)
-#     # timer_thread.daemon = True
-#     # timer_thread.start()
-#     spawn_worker()
-#     # app.run()
+#spawn_worker()
+
+if __name__ == '__main__':
+    # Start the timer_10_sec thread in the background
+    # timer_thread = threading.Thread(target=timer_10_sec)
+    # timer_thread.daemon = True
+    # timer_thread.start()
+    # spawn_worker()
+    app.run()
