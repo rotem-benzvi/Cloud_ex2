@@ -111,7 +111,7 @@ def spawn_worker():
             pip3 install paramiko
             echo "Install: Done"
 
-            git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
+            git clone https://github.com/rotem-benzvi/Cloud_ex2.git
 
             cd Cloud_ex2/
 
