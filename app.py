@@ -17,22 +17,38 @@ parser.add_argument('-name', help='Specify the name')
 args = parser.parse_args()
 
 # Access the value of the 'kind' argument
-kind = args.kind
+Kind = args.kind
 Name = args.name
 
 workQueue = Queue()
 workComplete = []
 maxNumOfWorkers = 2
 numOfWorkers = 0
+otherNodeIp = None
 
 region_name = 'eu-west-1'
 ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
-@app.route('/getArguments', methods=['GET'])
+@app.route('/getStatus', methods=['GET'])
 def get_arguments():
-    return jsonify({'name': Name, 'kind:': Kind}), 200
+    serverState = {
+        'name': Name,
+        'kind': Kind,
+        'otherNodeIp': otherNodeIp,
+        'maxNumOfWorkers': maxNumOfWorkers,
+        'numOfWorkers': numOfWorkers,
+        'workCompleteSize': len(workComplete),
+        'workQueueSize': workQueue.qsize()
+    }
+    return jsonify(serverState), 200
+
+@app.route('/setOtherNodeIp', methods=['POST'])
+def set_other_node_ip():
+    global otherNodeIp
+    otherNodeIp = request.args.get('ip')
+    return jsonify({'message': 'Other node IP set successfully.'}), 200
 
 @app.route('/')
 def index():
@@ -67,6 +83,7 @@ def pull_complete():
 
 @app.route('/spawn_worker', methods=['POST'])
 def spawn_worker():
+    global numOfWorkers
     key_name = request.args.get('keyName')
     security_group = request.args.get('securityGroup')
     node_name = "worker_456"   
@@ -78,59 +95,17 @@ def spawn_worker():
 
     public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind)
 
-    return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
-
-def spawn_worker2():
-    global numOfWorkers
-    global ec2_resource
-    # Create a new EC2 instance
-    instance = ec2_resource.create_instances(
-        ImageId='ami-00aa9d3df94c6c354',
-        InstanceType='t2.micro',
-        KeyName='eladkey',
-        MinCount=1,
-        MaxCount=1,
-        SecurityGroupIds=['my-sg-N'],
-        UserData='''#!/bin/bash
-
-            echo "Install: apt update"
-            apt update
-            echo "Install: python3"
-            apt install python3 -y
-            echo "Install: python3-flask"
-            apt install python3-flask -y
-            echo "Install: python3-pip"
-            apt install python3-pip -y
-            echo "Install: upgrade pip"
-            pip3 install --upgrade pip
-            echo "Install: awscli"
-            pip3 install awscli
-            echo "Install: boto3"
-            pip3 install boto3 
-            echo "Install: paramiko"
-            pip3 install paramiko
-            echo "Install: Done"
-
-            git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
-
-            cd Cloud_ex2/
-
-            FLASK_APP="app.py"
-            nohup python3 app.py -name endpoint_node1 -kind EndpointNode &>/var/log/pythonlogs.txt &
-            
-            echo "done"
-            exit
-         ''',
-    )[0]
-
-    # Wait until the instance is running
-    instance.wait_until_running()
-
-    # Update the worker count
     numOfWorkers += 1
 
-    return jsonify({'instance_id': instance.id}), 200
-      
+    return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown_os():
+    # Execute the shutdown command
+    subprocess.run(['sudo', 'shutdown', '-P', 'now'])
+    
+    # Return a response indicating that the shutdown command has been initiated
+    return jsonify({'message': 'Shutdown initiated successfully.'}), 200
 
 def timer_10_sec_describe_instances():
     if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
@@ -173,4 +148,4 @@ if __name__ == '__main__':
     # timer_thread.daemon = True
     # timer_thread.start()
     # spawn_worker()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=4555)
