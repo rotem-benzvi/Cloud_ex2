@@ -103,7 +103,7 @@ def spawn_worker():
 def shutdown_os():
     # Execute the shutdown command
     subprocess.run(['sudo', 'shutdown', '-P', 'now'])
-    
+
     # Return a response indicating that the shutdown command has been initiated
     return jsonify({'message': 'Shutdown initiated successfully.'}), 200
 
@@ -148,4 +148,4 @@ if __name__ == '__main__':
     # timer_thread.daemon = True
     # timer_thread.start()
     # spawn_worker()
-    app.run(host='0.0.0.0', port=4555)
+    app.run(host='0.0.0.0', port=5000)
