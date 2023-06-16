@@ -30,25 +30,19 @@ aws ec2 authorize-security-group-ingress        \
     --group-name $SEC_GRP --port 5000 --protocol tcp \
     --cidr $MY_IP/32
 
-#aws iam create-role                      \
-#    --role-name ec2-permissions-role     \
-#    --assume-role-policy-document file://trust-policy.json
-
-#aws iam put-role-policy                          \
-#    --role-name ec2-permissions-role             \
-#    --policy-name ec2-permissions-policy         \ 
-#    --policy-document file://ec2-permissions-policy.json
-
-#EC2_ROLE_ARN=$(aws iam get-role --role-name ec2-permissions-role --query "Role.Arn" --output text)
-
 UBUNTU_22_04_AMI="ami-00aa9d3df94c6c354"
+
+# Get the AWS access key ID and secret access key from the AWS CLI configuration
+AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
+
+# Get the AWS default region from the AWS CLI configuration
+AWS_REGION=$(aws configure get region)
 
 NAME="endpoint_node1"
 KIND='EndpointNode'
-sed -e "s/{{NAME}}/$NAME/" -e "s/{{KIND}}/$KIND/" run_node.sh > run_node1.sh
+sed -e "s/{{NAME}}/$NAME/" -e "s/{{KIND}}/$KIND/" -e 's|{{AWS_SECRET_ACCESS_KEY}}|'"$AWS_SECRET_ACCESS_KEY"'|' -e "s/{{AWS_ACCESS_KEY_ID}}/$AWS_ACCESS_KEY_ID/" -e "s/{{AWS_REGION}}/$AWS_REGION/" run_node.sh > run_node1.sh
 
-
-# to enable back ARN role need to add: -iam-instance-profile Arn=$EC2_ROLE_ARN \
 echo "Creating Ubuntu 22.04 instance..."
 RUN_INSTANCES=$(aws ec2 run-instances       \
     --image-id $UBUNTU_22_04_AMI            \

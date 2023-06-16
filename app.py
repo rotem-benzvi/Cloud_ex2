@@ -4,8 +4,12 @@ from queue import Queue
 import boto3
 import paramiko
 import argparse
+from create_node import create_instance
 
 app = Flask(__name__)
+
+Name = 'DeafultName'
+Kind = 'DefaultKind'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-kind', help='Specify the kind')
@@ -20,9 +24,6 @@ workQueue = Queue()
 workComplete = []
 maxNumOfWorkers = 2
 numOfWorkers = 0
-
-Name = 'DeafultName'
-Kind = 'DefaultKind'
 
 region_name = 'eu-west-1'
 ec2_resource = boto3.resource('ec2', region_name=region_name)
@@ -66,6 +67,20 @@ def pull_complete():
 
 @app.route('/spawn_worker', methods=['POST'])
 def spawn_worker():
+    key_name = request.args.get('keyName')
+    security_group = request.args.get('securityGroup')
+    node_name = "worker_456"   
+    node_kind = "WorkerNode"
+    print("spawn_worker: key_name = " + key_name)
+    print("spawn_worker: security_group = " + security_group)
+    print("spawn_worker: node_name = " + node_name)
+    print("spawn_worker: node_kind = " + node_kind)
+
+    public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind)
+
+    return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
+
+def spawn_worker2():
     global numOfWorkers
     global ec2_resource
     # Create a new EC2 instance
@@ -150,4 +165,4 @@ if __name__ == '__main__':
     # timer_thread.daemon = True
     # timer_thread.start()
     # spawn_worker()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=4555)
