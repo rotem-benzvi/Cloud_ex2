@@ -26,8 +26,23 @@ maxNumOfWorkers = 2
 numOfWorkers = 0
 otherNodeIp = None
 
-region_name = 'eu-west-1'
-ec2_resource = boto3.resource('ec2', region_name=region_name)
+# Access the environment variables
+access_key = os.environ['AWS_ACCESS_KEY_ID']
+secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+region = os.environ['AWS_DEFAULT_REGION']
+
+# Create a session using the environment variables
+session = boto3.Session(
+    aws_access_key_id=access_key,
+    aws_secret_access_key=secret_key,
+    region_name=region
+)
+
+# Create an EC2 resource using the session
+ec2_resource = session.resource('ec2')
+
+# region_name = 'eu-west-1'
+# ec2_resource = boto3.resource('ec2', region_name=region_name)
 
 otherNode = None  # Replace with the actual implementation of otherNode
 
