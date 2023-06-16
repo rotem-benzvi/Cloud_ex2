@@ -19,10 +19,10 @@ pip3 install paramiko
 echo "Install: Done"
 
 # Configure AWS CLI with access key ID and secret access key
-# aws configure set aws_access_key_id "{{KEY_ID}}"
-# aws configure set aws_secret_access_key "{{KEY}}"
+aws configure set aws_access_key_id "{{AWS_ACCESS_KEY_ID}}"
+aws configure set aws_secret_access_key "{{AWS_SECRET_ACCESS_KEY}}"
 # Set the AWS default region (optional)
-# aws configure set default.region "{{REGION}}"
+aws configure set default.region "{{AWS_REGION}}"
 
 git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
 
