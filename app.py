@@ -5,6 +5,8 @@ import boto3
 import paramiko
 import argparse
 from create_node import create_instance
+import subprocess
+
 
 app = Flask(__name__)
 
