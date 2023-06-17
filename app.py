@@ -89,10 +89,11 @@ def get_arguments():
         'otherNodeIp': otherNodeIp,
         'maxNumOfWorkers': maxNumOfWorkers,
         'numOfWorkers': len(workers),
+        'workers':  workers,
         'workCompleteSize': len(workComplete),
         'workQueueSize': workQueue.qsize(),
-        workComplete: workComplete,
-        workQueue: list(workQueue.queue)
+        'workComplete': workComplete,
+        'workQueue': list(workQueue.queue)
     }
     return jsonify(serverState), 200
 
@@ -126,7 +127,7 @@ def worker_done():
     worker_name = request.args.get('worker_name')
     message = "Not my worker."
     for worker in workers:
-        if worker.name == worker_name:
+        if worker == worker_name:
             workers.remove(worker)
             message = "Worker " + worker_name + " removed successfully."
             break
@@ -200,6 +201,13 @@ def pull_completed():
 #     #     except:
 #     #         pass
 #     return jsonify(results), 200
+
+#TODO remove this endpoint when finish debugging
+@app.route('/spawn_empty_worker', methods=['POST'])
+def spawn_empty_worker():
+    worker_name = request.args.get('worker_name')
+    workers.append(worker_name)
+    return jsonify({'message': 'Worker spawned successfully.'}), 200
 
 @app.route('/spawn_worker', methods=['POST'])
 def spawn_worker():
