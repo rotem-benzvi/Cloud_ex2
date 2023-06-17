@@ -24,7 +24,7 @@ aws configure set aws_secret_access_key "{{AWS_SECRET_ACCESS_KEY}}"
 # Set the AWS default region (optional)
 aws configure set default.region "{{AWS_REGION}}"
 
-git clone https://github.com/rotem-benzvi/Cloud_ex2.git
+git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
 
 echo "made it"
 
