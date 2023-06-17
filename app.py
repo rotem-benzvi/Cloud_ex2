@@ -5,6 +5,8 @@ import boto3
 import paramiko
 import argparse
 from create_node import create_instance
+import subprocess
+
 
 app = Flask(__name__)
 
@@ -101,7 +103,7 @@ def spawn_worker():
 @app.route('/shutdown', methods=['POST'])
 def shutdown_os():
     # Execute the shutdown command
-    subprocess.run(['sudo', 'shutdown', '-P', 'now'])
+    subprocess.run(['sudo', 'shutdown', '-h', 'now'])
 
     # Return a response indicating that the shutdown command has been initiated
     return jsonify({'message': 'Shutdown initiated successfully.'}), 200
