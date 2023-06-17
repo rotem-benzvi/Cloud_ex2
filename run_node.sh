@@ -16,6 +16,8 @@ echo "Install: boto3"
 pip3 install boto3 
 echo "Install: paramiko"
 pip3 install paramiko
+echo "Install: requests"
+pip3 install requests
 echo "Install: Done"
 
 # Configure AWS CLI with access key ID and secret access key
