@@ -449,7 +449,7 @@ if __name__ == '__main__':
     # spawn_worker()
 
     if(Kind == "WorkerNode"):
-        worker = WorkerNode(Name)
+        worker = WorkerNode(Name, parentIP=Parent_Private_Ip)
         # run worker.run() in background thread
         worker_thread = threading.Thread(target=worker.run)
         worker_thread.daemon = True
