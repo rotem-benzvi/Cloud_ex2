@@ -70,7 +70,6 @@ workQueue = Queue()
 workComplete = []
 maxNumOfWorkers = 2
 workers = []
-numOfWorkers = 0
 otherNodeIp = None
 work_id_counter = 1
 
@@ -92,8 +91,7 @@ def get_arguments():
         'workers':  workers,
         'workCompleteSize': len(workComplete),
         'workQueueSize': workQueue.qsize(),
-        'workComplete': workComplete,
-        'workQueue': list(workQueue.queue)
+        'workComplete': workComplete
     }
     return jsonify(serverState), 200
 
@@ -139,6 +137,8 @@ def worker_done():
 def give_me_work():
     if not workQueue.empty():
         work = workQueue.get()
+        print("Work given to worker: " + work.id)
+        print(type(work))
         return work.to_json(), 200
     else:
         return jsonify({'message': 'No work available.'}), 204
@@ -152,7 +152,8 @@ def post_completed_work():
 @app.route('/enqueue', methods=['PUT'])
 def enqueue_work():
     iterations = int(request.args.get('iterations'))
-    data = request.data.decode('utf-8')
+    data = request.data
+    print("Work received: " + data.decode('latin-1'))
 
     global work_id_counter
     work_id = Name + str(work_id_counter) 
@@ -175,6 +176,13 @@ def pull_completed():
     #     except:
     #         pass
     return jsonify(completed_items), 200
+
+# create function that get ip and top and send a POST request to /pullCompleted
+def pull_completed_internal(ip, top):
+    url = 'http://' + ip + ':5000/pullCompleted?top=' + str(top)
+    response = requests.post(url)
+    return response.json()
+
 
 # @app.route('/enqueueWork', methods=['POST'])
 # def enqueue_work():
@@ -209,6 +217,7 @@ def spawn_empty_worker():
     workers.append(worker_name)
     return jsonify({'message': 'Worker spawned successfully.'}), 200
 
+#TODO remove this endpoint when finish debugging
 @app.route('/spawn_worker', methods=['POST'])
 def spawn_worker():
     key_name = request.args.get('keyName')
@@ -220,12 +229,15 @@ def spawn_worker():
     print("spawn_worker: node_name = " + node_name)
     print("spawn_worker: node_kind = " + node_kind)
 
+    # R TODO move to function  
     public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind)
 
     workers.append(node_name)
 
-    #TODO set worker parent ip
-    #set_worker_parent_ip(public_ip)
+    # R TODO set worker parent ip
+    #set_worker_parent_ip(private_ip)
+
+    # R TODO finish function  
 
     return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
 
@@ -237,22 +249,22 @@ def shutdown_os():
     # Return a response indicating that the shutdown command has been initiated
     return jsonify({'message': 'Shutdown initiated successfully.'}), 200
 
-# TODO fix method
-def timer_10_sec_describe_instances():
-    if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
-        # Implement describe_instances logic here
-        instances = []
-        if len(instances) < maxNumOfWorkers:
-            spawn_worker()
 
-# TODO fix method
-def timer_10_sec():
+
+# R TODO fix method
+# add  a backgrround thread at main if EndpointNode
+def spawn_worker_if_needed():
     while True:
         if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
             if numOfWorkers < maxNumOfWorkers:
+                # create worker name based on the endpointname + the worker number 
                 spawn_worker()
+        # TODO change sleep to 0.1
+        time.sleep(2)
+
+            # TODO check if needed
             # else:
-            #     if otherNode.TryGetNodeQuota():
+            #     if otherNode.try_get_node_quota():
             #         maxNumOfWorkers += 1
 
 # TODO fix method
@@ -292,22 +304,31 @@ class WorkerNode:
             localEndpointNodesIPs = []
             # Implement logic to get endpoint nodes IPs from AWS here
             
-            # Use ec2_client.describe_instances() to get the list of instances with the tag 'Type' = 'EndpointNode'
-            # For each instance, get the private IP address and append it to the localEndpointNodesIPs list
-            # wrte your code here
-            response = ec2_client.describe_instances(
-                Filters=[
-                    {
-                        'Name': 'tag:Type',
-                        'Values': [
-                            'EndpointNode',
-                        ]
-                    },
-                ],
-            )
-            for reservation in response["Reservations"]:
-                for instance in reservation["Instances"]:
-                    localEndpointNodesIPs.append(instance["PrivateIpAddress"])
+            filters = [
+                {'Name': 'instance-state-name', 'Values': ['running']},
+                {'Name': 'tag:Type', 'Values': ['EndpointNode']}
+            ]
+
+            response = ec2_client.describe_instances(Filters=filters)
+
+            # Extract the instance IDs
+            instance_ids = []
+            for reservation in response['Reservations']:
+                for instance in reservation['Instances']:
+                    instance_ids.append(instance['InstanceId'])
+
+            # Call describe_instance_status to check status checks
+            status_response = ec2_client.describe_instance_status(InstanceIds=instance_ids, Filters=[{'Name': 'instance-status.status', 'Values': ['ok']}])
+
+            # Extract the instances that pass all status checks
+            instances = []
+            for instance_status in status_response['InstanceStatuses']:
+                instances.append(instance_status['InstanceId'])
+
+            for reservation in response['Reservations']:
+                for instance in reservation['Instances']:
+                    if instance['InstanceId'] in instances:
+                        localEndpointNodesIPs.append(instance["PrivateIpAddress"])
 
             # If the localEndpointNodesIPs not contains the parentIP print error message and set shouldShutdown to True
             if self.parentIP != None and self.parentIP not in localEndpointNodesIPs: 
