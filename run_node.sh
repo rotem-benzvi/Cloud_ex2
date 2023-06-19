@@ -16,6 +16,8 @@ echo "Install: boto3"
 pip3 install boto3 
 echo "Install: paramiko"
 pip3 install paramiko
+echo "Install: requests"
+pip3 install requests
 echo "Install: Done"
 
 # Configure AWS CLI with access key ID and secret access key
@@ -24,7 +26,7 @@ aws configure set aws_secret_access_key "{{AWS_SECRET_ACCESS_KEY}}"
 # Set the AWS default region (optional)
 aws configure set default.region "{{AWS_REGION}}"
 
-git clone https://github.com/rotem-benzvi/Cloud_ex2.git
+git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
 
 echo "made it"
 
