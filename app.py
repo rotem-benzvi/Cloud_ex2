@@ -9,46 +9,7 @@ import subprocess
 import threading
 import time
 import requests
-
-# TODO take this to different file
-import json
-
-class Work:
-    def __init__(self, work_id, iterations, data, created_time):
-        self.id = work_id
-        self.iterations = iterations
-        self.data = data
-        self.created_time = created_time
-
-    def to_json(self):
-        return json.dumps({
-            'id': self.id,
-            'iterations': self.iterations,
-            'data': self.data,
-            'created_time': self.created_time
-        })
-
-    @classmethod
-    def from_json(cls, json_str):
-        data = json.loads(json_str)
-        return cls(data['id'], data['iterations'], data['data'], data['created_time'])
-
-class CompletedWork:
-    def __init__(self, work_id, value):
-        self.id = work_id
-        self.value = value
-
-    def to_json(self):
-        return json.dumps({
-            'id': self.id,
-            'value': self.value
-        })
-
-    @classmethod
-    def from_json(cls, json_str):
-        data = json.loads(json_str)
-        return cls(data['id'], data['value'])
-
+from model import Work, CompletedWork
 
 app = Flask(__name__)
 

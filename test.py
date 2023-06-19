@@ -3,6 +3,7 @@ from flask import Flask, request
 import requests
 import os
 import random
+from model import Work, CompletedWork
 
 
 #create a function that given ip and iterations will send a PUT request to /enqueue with a random small binary data (16 – 256 KB)
@@ -32,8 +33,10 @@ def get_work(ip, port):
     print("get_work: " + ip + ":" + port)
     try:
         response = requests.get("http://" + ip + ":" + port + "/giveMeWork", timeout=2)
+        print("get_work response: " + str(response))
         if response != None and response.status_code == 200:
-            return Work.from_json(response.text)
+            work1 =  Work.from_json(response.text)
+            print("get_work: " + work1.id + " (iteration: " + str(work1.iterations) + " ): " + str(work1.data)  )
     except requests.exceptions.Timeout:
         print("get_work: Timeout error")
 
