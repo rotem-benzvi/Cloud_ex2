@@ -1,10 +1,21 @@
+import socket
+
 import boto3
 import json
 import argparse
 import os
 import sys
 
-def create_instance(key_name, security_group, node_name, node_kind):
+def get_private_ip():
+    # Get the hostname
+    hostname = socket.gethostname()
+
+    # Get the IP address associated with the hostname
+    ip_address = socket.gethostbyname(hostname)
+
+    return ip_address
+
+def create_instance(key_name, security_group, node_name, node_kind, parent_private_ip):
     UBUNTU_22_04_AMI = "ami-00aa9d3df94c6c354"
 
     # Get the AWS access key ID and secret access key from the AWS CLI configuration
@@ -19,6 +30,7 @@ def create_instance(key_name, security_group, node_name, node_kind):
         script_content = f.read()
         script_content = script_content.replace("{{NAME}}", node_name)
         script_content = script_content.replace("{{KIND}}", node_kind)
+        script_content = script_content.replace("{{PARENT_PRIVATE_IP}}", parent_private_ip)
         script_content = script_content.replace("{{AWS_SECRET_ACCESS_KEY}}", aws_secret_access_key)
         script_content = script_content.replace("{{AWS_ACCESS_KEY_ID}}", aws_access_key_id)
         script_content = script_content.replace("{{AWS_REGION}}", aws_region)
@@ -87,8 +99,8 @@ if __name__ == '__main__':
     security_group = args.security_group
     node_name = args.name   
     node_kind = args.kind
-
-    public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind)
+    private_ip = get_private_ip()
+    public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, private_ip)
 
     # Enable print statements
     sys.stdout = sys.__stdout__  # Restore the standard output

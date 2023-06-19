@@ -26,7 +26,7 @@ aws configure set aws_secret_access_key "{{AWS_SECRET_ACCESS_KEY}}"
 # Set the AWS default region (optional)
 aws configure set default.region "{{AWS_REGION}}"
 
-git clone --single-branch --branch EladBranch https://github.com/rotem-benzvi/Cloud_ex2.git
+git clone --single-branch --branch RotemBranch https://github.com/rotem-benzvi/Cloud_ex2.git
 
 echo "made it"
 
@@ -36,7 +36,7 @@ FLASK_APP="app.py"
 export FLASK_RUN_PORT=5000
 export FLASK_RUN_HOST="0.0.0.0"
 #nohup flask run --host=0.0.0.0 --port=5000 &>/dev/null &
-nohup python3 app.py -name {{NAME}} -kind {{KIND}} &>/var/log/pythonlogs.txt &
+nohup python3 app.py -name {{NAME}} -kind {{KIND}} -parent_private_ip {{PARENT_PRIVATE_IP}} &>/var/log/pythonlogs.txt &
 
 echo "done"
 exit

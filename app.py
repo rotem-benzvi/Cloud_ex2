@@ -9,9 +9,19 @@ import subprocess
 import threading
 import time
 import requests
+import socket
 
 # TODO take this to different file
 import json
+
+def get_private_ip():
+    # Get the hostname
+    hostname = socket.gethostname()
+
+    # Get the IP address associated with the hostname
+    ip_address = socket.gethostbyname(hostname)
+
+    return ip_address
 
 class Work:
     def __init__(self, work_id, iterations, data, created_time):
@@ -58,11 +68,13 @@ Kind = 'DefaultKind'
 parser = argparse.ArgumentParser()
 parser.add_argument('-kind', help='Specify the kind')
 parser.add_argument('-name', help='Specify the name')
+parser.add_argument('-parent_private_ip', help="Specify parent private ip")
 args = parser.parse_args()
 
 # Access the value of the 'kind' argument
 Kind = args.kind
 Name = args.name
+Parent_Private_Ip = args.parent_private_ip
 
 worker = None
 
@@ -91,7 +103,8 @@ def get_arguments():
         'workers':  workers,
         'workCompleteSize': len(workComplete),
         'workQueueSize': workQueue.qsize(),
-        'workComplete': workComplete
+        'workComplete': workComplete,
+        'parent_private_ip': Parent_Private_Ip
     }
     return jsonify(serverState), 200
 
@@ -224,16 +237,18 @@ def spawn_worker():
     security_group = request.args.get('securityGroup')
     node_name = "worker_456"   
     node_kind = "WorkerNode"
+    parent_private_ip = get_private_ip()
+
     print("spawn_worker: key_name = " + key_name)
     print("spawn_worker: security_group = " + security_group)
     print("spawn_worker: node_name = " + node_name)
     print("spawn_worker: node_kind = " + node_kind)
+    print("spawn_worker: private_ip = " + parent_private_ip)
 
     # R TODO move to function  
-    public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind)
+    public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, parent_private_ip)
 
     workers.append(node_name)
-
     # R TODO set worker parent ip
     #set_worker_parent_ip(private_ip)
 
@@ -256,7 +271,7 @@ def shutdown_os():
 def spawn_worker_if_needed():
     while True:
         if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
-            if numOfWorkers < maxNumOfWorkers:
+            if len(workers) < maxNumOfWorkers:
                 # create worker name based on the endpointname + the worker number 
                 spawn_worker()
         # TODO change sleep to 0.1
@@ -270,7 +285,7 @@ def spawn_worker_if_needed():
 # TODO fix method
 def try_get_node_quota():
     global maxNumOfWorkers
-    if numOfWorkers < maxNumOfWorkers:
+    if len(worker) < maxNumOfWorkers:
         maxNumOfWorkers -= 1
         return True
     return False
@@ -280,6 +295,7 @@ print("I've made it here")
 #spawn_worker()
 
 # new Code 
+
 
 class WorkerNode:
     # creaete a worker node
@@ -425,14 +441,6 @@ class WorkerNode:
         }
 
 
-def get_public_ip():
-    url = 'https://checkip.amazonaws.com'
-    with urllib.request.urlopen(url) as response:
-        public_ip = response.read().decode('utf-8').strip()
-    return public_ip
-
-
-
 if __name__ == '__main__':
     # Start the timer_10_sec thread in the background
     # timer_thread = threading.Thread(target=timer_10_sec)
@@ -446,6 +454,5 @@ if __name__ == '__main__':
         worker_thread = threading.Thread(target=worker.run)
         worker_thread.daemon = True
         worker_thread.start()
-
 
     app.run(host='0.0.0.0', port=5000)
