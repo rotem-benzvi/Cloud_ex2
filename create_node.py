@@ -31,9 +31,12 @@ def create_instance(key_name, security_group, node_name, node_kind, parent_priva
         script_content = script_content.replace("{{NAME}}", node_name)
         script_content = script_content.replace("{{KIND}}", node_kind)
         script_content = script_content.replace("{{PARENT_PRIVATE_IP}}", parent_private_ip)
+        script_content = script_content.replace("{{KEY_NAME}}", key_name)
         script_content = script_content.replace("{{AWS_SECRET_ACCESS_KEY}}", aws_secret_access_key)
         script_content = script_content.replace("{{AWS_ACCESS_KEY_ID}}", aws_access_key_id)
         script_content = script_content.replace("{{AWS_REGION}}", aws_region)
+        script_content = script_content.replace("{{SECURITY_GROUP}}", aws_region)
+
 
     #print(script_content)
     # with open("run_node1.sh", "w") as f:

@@ -69,11 +69,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-kind', help='Specify the kind')
 parser.add_argument('-name', help='Specify the name')
 parser.add_argument('-parent_private_ip', help="Specify parent private ip")
+parser.add_argument('-key_name', help="Specify key_name")
+parser.add_argument('-security_group', help="Specify security_group")
+
 args = parser.parse_args()
 
 # Access the value of the 'kind' argument
 Kind = args.kind
 Name = args.name
+Key_Name = args.key_name
+Security_Group = args.security_group
 Parent_Private_Ip = args.parent_private_ip
 
 worker = None
@@ -275,8 +280,8 @@ def spawn_worker_if_needed():
                 # create worker name based on the endpointname + the worker number 
                 spawn_worker()
         # TODO change sleep to 0.1
-        time.sleep(2)
-
+        time.sleep(10)
+            #
             # TODO check if needed
             # else:
             #     if otherNode.try_get_node_quota():
@@ -295,6 +300,44 @@ print("I've made it here")
 #spawn_worker()
 
 # new Code 
+class EndPointNode:
+    # creaete a worker node
+    def __init__(self, name, key_name, security_group):
+        self.name = name
+        self.key_name = key_name
+        self.security_group = security_group
+
+    # R TODO fix method
+    # add  a backgrround thread at main if EndpointNode
+    def spawn_worker_if_needed(self):
+        while True:
+            if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
+                if len(workers) < maxNumOfWorkers:
+                    # create worker name based on the endpointname + the worker number
+                    spawn_worker(self.key_name, self.security_group)
+            time.sleep(2)
+
+    def spawn_worker(self, key_name, security_group):
+        node_name = "worker_456"
+        node_kind = "WorkerNode"
+        parent_private_ip = get_private_ip()
+
+        print("spawn_worker: key_name = " + key_name)
+        print("spawn_worker: security_group = " + security_group)
+        print("spawn_worker: node_name = " + node_name)
+        print("spawn_worker: node_kind = " + node_kind)
+        print("spawn_worker: private_ip = " + parent_private_ip)
+
+        # R TODO move to function
+        public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, parent_private_ip)
+
+        workers.append(node_name)
+        # R TODO set worker parent ip
+        # set_worker_parent_ip(private_ip)
+
+        # R TODO finish function
+
+        return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
 
 
 class WorkerNode:
@@ -454,5 +497,12 @@ if __name__ == '__main__':
         worker_thread = threading.Thread(target=worker.run)
         worker_thread.daemon = True
         worker_thread.start()
+
+    if (Kind == "EndpointNode"):
+        endpoint = EndPointNode(Name, Key_Name, Security_Group)
+        # run endpoint.run() in background thread
+        endpoint_thread = threading.Thread(target=endpoint.spawn_worker_if_needed)
+        endpoint_thread.daemon = True
+        endpoint_thread.start()
 
     app.run(host='0.0.0.0', port=5000)
