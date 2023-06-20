@@ -275,17 +275,18 @@ def shutdown_os():
 # add  a backgrround thread at main if EndpointNode
 def spawn_worker_if_needed():
     while True:
-        if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
-            if len(workers) < maxNumOfWorkers:
-                # create worker name based on the endpointname + the worker number 
-                spawn_worker()
-        # TODO change sleep to 0.1
-        time.sleep(10)
-            #
-            # TODO check if needed
-            # else:
-            #     if otherNode.try_get_node_quota():
-            #         maxNumOfWorkers += 1
+        print(workQueue.get())
+        # if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
+        #     if len(workers) < maxNumOfWorkers:
+        #         # create worker name based on the endpointname + the worker number
+        #         spawn_worker()
+        # # TODO change sleep to 0.1
+        # time.sleep(10)
+        #     #
+        #     # TODO check if needed
+        #     # else:
+        #     #     if otherNode.try_get_node_quota():
+        #     #         maxNumOfWorkers += 1
 
 # TODO fix method
 def try_get_node_quota():
@@ -311,11 +312,11 @@ class EndPointNode:
     # add  a backgrround thread at main if EndpointNode
     def spawn_worker_if_needed(self):
         while True:
-            if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
+            if not workQueue.empty() and (datetime.now() - workQueue.queue[0].created_time) > timedelta(seconds=15):
                 if len(workers) < maxNumOfWorkers:
                     # create worker name based on the endpointname + the worker number
-                    spawn_worker(self.key_name, self.security_group)
-            time.sleep(2)
+                    self.spawn_worker(self.key_name, self.security_group)
+            time.sleep(10)
 
     def spawn_worker(self, key_name, security_group):
         node_name = "worker_456"
@@ -505,4 +506,4 @@ if __name__ == '__main__':
         endpoint_thread.daemon = True
         endpoint_thread.start()
 
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=4555)

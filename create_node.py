@@ -35,7 +35,7 @@ def create_instance(key_name, security_group, node_name, node_kind, parent_priva
         script_content = script_content.replace("{{AWS_SECRET_ACCESS_KEY}}", aws_secret_access_key)
         script_content = script_content.replace("{{AWS_ACCESS_KEY_ID}}", aws_access_key_id)
         script_content = script_content.replace("{{AWS_REGION}}", aws_region)
-        script_content = script_content.replace("{{SECURITY_GROUP}}", aws_region)
+        script_content = script_content.replace("{{SECURITY_GROUP}}", security_group)
 
 
     #print(script_content)
