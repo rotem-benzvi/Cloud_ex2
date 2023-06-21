@@ -1,19 +1,8 @@
-import socket
-
 import boto3
 import json
 import argparse
 import os
 import sys
-
-def get_private_ip():
-    # Get the hostname
-    hostname = socket.gethostname()
-
-    # Get the IP address associated with the hostname
-    ip_address = socket.gethostbyname(hostname)
-
-    return ip_address
 
 def create_instance(key_name, security_group, node_name, node_kind, parent_private_ip):
     UBUNTU_22_04_AMI = "ami-00aa9d3df94c6c354"
@@ -102,7 +91,7 @@ if __name__ == '__main__':
     security_group = args.security_group
     node_name = args.name   
     node_kind = args.kind
-    private_ip = get_private_ip()
+    private_ip = "empty"
     public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, private_ip)
 
     # Enable print statements

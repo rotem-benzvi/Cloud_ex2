@@ -25,7 +25,7 @@ def pull_completed_internal(ip, port, top):
 
 #create a function that given ip call /getStatus and return the response
 def get_status(ip, port):
-    response = requests.get('http://' + ip + ':' + port + '/getStatus')
+    response = requests.get('http://' + ip + ':' + port + '/getStatus', timeout=2)
     print("get_status: " + str(response.status_code))
     print(response.text)
     return response.json()
