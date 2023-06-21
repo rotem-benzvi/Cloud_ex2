@@ -9,6 +9,7 @@ import subprocess
 import threading
 import time
 import requests
+import base64
 from model import Work, CompletedWork
 import socket
 
@@ -53,8 +54,6 @@ work_id_counter = 1
 
 ec2_resource = boto3.resource('ec2')
 
-otherNode = None  # Replace with the actual implementation of otherNode
-
 @app.route('/getStatus', methods=['GET'])
 def get_arguments():
     if(worker != None):
@@ -97,7 +96,6 @@ def index():
 
 # Endpoint Node calls 
 
-#create post request /workerDone with worker name in quesry params
 @app.route('/workerDone', methods=['POST'])
 def worker_done():
     #remove worker from list of workers
@@ -158,12 +156,11 @@ def pull_completed():
     workCompleteJson = str(completed_items)
     return jsonify(workCompleteJson), 200
 
-# create function that get ip and top and send a POST request to /pullCompleted
-def pull_completed_internal(ip, top):
-    url = 'http://' + ip + ':5000/pullCompleted?top=' + str(top)
-    response = requests.post(url)
-    return response.json()
 
+
+############################
+#    For Testing Purposes  #
+############################
 
 #TODO remove this endpoint when finish debugging
 @app.route('/spawn_empty_worker', methods=['POST'])
@@ -175,55 +172,40 @@ def spawn_empty_worker():
 #TODO remove this endpoint when finish debugging
 @app.route('/spawn_worker', methods=['POST'])
 def spawn_worker():
-    key_name = request.args.get('keyName')
-    security_group = request.args.get('securityGroup')
-    node_name = "worker_456"   
-    node_kind = "WorkerNode"
-    parent_private_ip = get_private_ip()
+    if(endpoint != None):
+        key_name = request.args.get('keyName')
+        security_group = request.args.get('securityGroup')
+        parent_private_ip = request.args.get('parentIp')
+        woker_name = "worker_456"
 
-    print("spawn_worker: key_name = " + key_name)
-    print("spawn_worker: security_group = " + security_group)
-    print("spawn_worker: node_name = " + node_name)
-    print("spawn_worker: node_kind = " + node_kind)
-    print("spawn_worker: private_ip = " + parent_private_ip)
+        print(f"key_name: {key_name}, security_group: {security_group}, woker_name: {woker_name}, parent_private_ip: {parent_private_ip}")
 
-    # R TODO move to function  
-    public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, parent_private_ip)
+        public_ip, instance_id = endpoint.spawn_worker(woker_name, key_name, security_group, parent_private_ip)
 
-    workers.append(node_name)
-    # R TODO set worker parent ip
-    #set_worker_parent_ip(private_ip)
+        return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
 
-    # R TODO finish function  
-
-    return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
+    return jsonify({'message': 'Endpoint not initialized.'}), 404
 
 @app.route('/shutdown', methods=['POST'])
 def shutdown_os():
-    # Execute the shutdown command
-    subprocess.run(['sudo', 'shutdown', '-h', 'now'])
+    if(worker != None):
+        # Execute the shutdown command
+        worker.shutdown()
 
-    # Return a response indicating that the shutdown command has been initiated
-    return jsonify({'message': 'Shutdown initiated successfully.'}), 200
+        # Return a response indicating that the shutdown command has been initiated
+        return jsonify({'message': 'Shutdown initiated successfully.'}), 200
+
+    return jsonify({'message': 'Worker not initialized.'}), 404
+    
 
 
+############################
+#    End Testing Purposes  #
+############################
 
-# R TODO fix method
-# add  a backgrround thread at main if EndpointNode
-def spawn_worker_if_needed():
-    while True:
-        print(workQueue.get())
-        # if not workQueue.empty() and (datetime.now() - workQueue.queue[0][2]) > timedelta(seconds=15):
-        #     if len(workers) < maxNumOfWorkers:
-        #         # create worker name based on the endpointname + the worker number
-        #         spawn_worker()
-        # # TODO change sleep to 0.1
-        # time.sleep(10)
-        #     #
-        #     # TODO check if needed
-        #     # else:
-        #     #     if otherNode.try_get_node_quota():
-        #     #         maxNumOfWorkers += 1
+############################
+#    condsider implement  #
+############################
 
 # TODO fix method
 def try_get_node_quota():
@@ -233,9 +215,9 @@ def try_get_node_quota():
         return True
     return False
 
-print("I've made it here")
-
-#spawn_worker()
+############################
+#    End condsider implement  #
+############################
 
 # new Code 
 class EndPointNode:
@@ -244,21 +226,38 @@ class EndPointNode:
         self.name = name
         self.key_name = key_name
         self.security_group = security_group
+        self.worker_id_counter = 1
 
-    # R TODO fix method
-    # add  a backgrround thread at main if EndpointNode
     def spawn_worker_if_needed(self):
         while True:
-            if not workQueue.empty() and (datetime.now() - workQueue.queue[0].created_time) > timedelta(seconds=15):
+            if not workQueue.empty() and (datetime.now() - workQueue.queue[0].created_time) > timedelta(seconds=10):
+                print("spawn_worker_if_needed: workQueue not empty and last work created more than 10 seconds ago.")
                 if len(workers) < maxNumOfWorkers:
+                    print("spawn_worker_if_needed: workers list is not full.")
                     # create worker name based on the endpointname + the worker number
-                    self.spawn_worker(self.key_name, self.security_group)
-            time.sleep(10)
+                    woker_name = "worker_" + str(self.worker_id_counter) + "_of_" + self.name
+                    self.worker_id_counter += 1
+                    parent_private_ip = get_private_ip()
 
-    def spawn_worker(self, key_name, security_group):
-        node_name = "worker_456"
+                    public_ip, instance_id = self.spawn_worker(woker_name, self.key_name, self.security_group, parent_private_ip)
+                    print(f"spawn_worker_if_needed: worker spawned successfully. public_ip: {public_ip} , instance_id: {instance_id}")
+            else:
+                print("spawn_worker_if_needed: workQueue is empty or last work created less than 15 seconds ago.")
+            
+                
+            print("spawn_worker_if_needed: sleeping for 1 seconds.")
+            #TODO change sleep to 0.1
+            time.sleep(1)
+            
+            # TODO check if needed
+            # else:
+            #     if otherNode.try_get_node_quota():
+            #         maxNumOfWorkers += 1
+            
+
+    def spawn_worker(self, woker_name, key_name, security_group, parent_private_ip):
+        node_name = woker_name
         node_kind = "WorkerNode"
-        parent_private_ip = get_private_ip()
 
         print("spawn_worker: key_name = " + key_name)
         print("spawn_worker: security_group = " + security_group)
@@ -266,16 +265,10 @@ class EndPointNode:
         print("spawn_worker: node_kind = " + node_kind)
         print("spawn_worker: private_ip = " + parent_private_ip)
 
-        # R TODO move to function
         public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, parent_private_ip)
-
         workers.append(node_name)
-        # R TODO set worker parent ip
-        # set_worker_parent_ip(private_ip)
 
-        # R TODO finish function
-
-        return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
+        return public_ip, instance_id
 
 
 class WorkerNode:
@@ -359,7 +352,7 @@ class WorkerNode:
                 if work != None:
                     print("Got work from node:" + nodeIP)
                     result = self.work(work.data, work.iterations)
-                    self.send_completed_work(nodeIP, work.work_id, result)
+                    self.send_completed_work(nodeIP, work.id, result)
                     self.lastWorkTime = time.time()
                 else:
                     print("No work available for node:" + nodeIP)
@@ -386,7 +379,7 @@ class WorkerNode:
         completedWork = CompletedWork(work_id, encoded_result)
         print("send_completed_work: " + completedWork.to_json())
         try:
-            response = requests.post("http://" + ip + ":" + port + "/postCompletedWork", data=completedWork.to_json())
+            response = requests.post("http://" + ip + ":5000/postCompletedWork", data=completedWork.to_json())
             if response != None:
                 print("send_completed_work (status code" + str(response.status_code) + "): " + response.text)
         except requests.exceptions.Timeout:
@@ -401,7 +394,7 @@ class WorkerNode:
         try:
             response = requests.post("http://" + self.parentIP + ":5000/workerDone?worker_name=" + self.name, timeout=5)
             if response != None:
-                print("kill_myself (status code" + response.status_code + "): " + response.text)
+                print("kill_myself (status code" + str(response.status_code) + "): " + response.text)
         except requests.exceptions.Timeout:
             print("kill_myself: Timeout error")
 
@@ -423,13 +416,8 @@ class WorkerNode:
 
 
 if __name__ == '__main__':
-    # Start the timer_10_sec thread in the background
-    # timer_thread = threading.Thread(target=timer_10_sec)
-    # timer_thread.daemon = True
-    # timer_thread.start()
-    # spawn_worker()
-
     if(Kind == "WorkerNode"):
+        print("Starting worker node")
         worker = WorkerNode(Name, parentIP=Parent_Private_Ip)
         # run worker.run() in background thread
         worker_thread = threading.Thread(target=worker.run)
@@ -437,6 +425,7 @@ if __name__ == '__main__':
         worker_thread.start()
 
     if (Kind == "EndpointNode"):
+        print("Starting endpoint node")
         endpoint = EndPointNode(Name, Key_Name, Security_Group)
         # run endpoint.run() in background thread
         endpoint_thread = threading.Thread(target=endpoint.spawn_worker_if_needed)

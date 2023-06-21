@@ -10,9 +10,9 @@ from model import Work, CompletedWork
 #create a function that given ip and iterations will send a PUT request to /enqueue with a random small binary data (16 – 256 KB)
 def send_work(ip, port, iterations):
     # TODO, change back to random.randint(16, 256)
-    #data = os.urandom(random.randint(16, 256) * 1024)
-    data = os.urandom(random.randint(1,2) * 8)
-    print('Sending work to ' + ip + ' with ' + str(iterations) + ' iterations.' + ' Data: ' + str(data))
+    data = os.urandom(random.randint(16, 256) * 1024)
+    # data = os.urandom(random.randint(1,2) * 8)
+    print('Sending work to ' + ip + ' with ' + str(iterations) + ' iterations.') # + ' Data: ' + str(data))
     respons = requests.put('http://' + ip + ':' + port + '/enqueue?iterations=' + str(iterations), data=data)
     print(respons.text)
 
@@ -25,7 +25,7 @@ def pull_completed_internal(ip, port, top):
 
 #create a function that given ip call /getStatus and return the response
 def get_status(ip, port):
-    response = requests.get('http://' + ip + ':' + port + '/getStatus')
+    response = requests.get('http://' + ip + ':' + port + '/getStatus', timeout=2)
     print("get_status: " + str(response.status_code))
     print(response.text)
     return response.json()
