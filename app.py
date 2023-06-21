@@ -229,8 +229,8 @@ class EndPointNode:
 
     def spawn_worker_if_needed(self):
         while True:
-            if not workQueue.empty() and (datetime.now() - workQueue.queue[0].created_time) > timedelta(seconds=15):
-                print("spawn_worker_if_needed: workQueue not empty and last work created more than 15 seconds ago.")
+            if not workQueue.empty() and (datetime.now() - workQueue.queue[0].created_time) > timedelta(seconds=10):
+                print("spawn_worker_if_needed: workQueue not empty and last work created more than 10 seconds ago.")
                 if len(workers) < maxNumOfWorkers:
                     print("spawn_worker_if_needed: workers list is not full.")
                     # create worker name based on the endpointname + the worker number
