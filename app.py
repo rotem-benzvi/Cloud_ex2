@@ -244,9 +244,9 @@ class EndPointNode:
                 print("spawn_worker_if_needed: workQueue is empty or last work created less than 15 seconds ago.")
             
                 
-            print("spawn_worker_if_needed: sleeping for 15 seconds.")
+            print("spawn_worker_if_needed: sleeping for 1 seconds.")
             #TODO change sleep to 0.1
-            time.sleep(15)
+            time.sleep(1)
             
             # TODO check if needed
             # else:
