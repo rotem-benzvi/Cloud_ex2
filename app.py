@@ -351,7 +351,7 @@ class WorkerNode:
                 if work != None:
                     print("Got work from node:" + nodeIP)
                     result = self.work(work.data, work.iterations)
-                    self.send_completed_work(nodeIP, work.work_id, result)
+                    self.send_completed_work(nodeIP, work.id, result)
                     self.lastWorkTime = time.time()
                 else:
                     print("No work available for node:" + nodeIP)
@@ -378,7 +378,7 @@ class WorkerNode:
         completedWork = CompletedWork(work_id, encoded_result)
         print("send_completed_work: " + completedWork.to_json())
         try:
-            response = requests.post("http://" + ip + ":" + port + "/postCompletedWork", data=completedWork.to_json())
+            response = requests.post("http://" + ip + ":5000/postCompletedWork", data=completedWork.to_json())
             if response != None:
                 print("send_completed_work (status code" + str(response.status_code) + "): " + response.text)
         except requests.exceptions.Timeout:
