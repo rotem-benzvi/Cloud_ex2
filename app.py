@@ -431,4 +431,4 @@ if __name__ == '__main__':
         endpoint_thread.daemon = True
         endpoint_thread.start()
 
-    app.run(host='0.0.0.0', port=4555)
+    app.run(host='0.0.0.0', port=5000)
