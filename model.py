@@ -2,7 +2,7 @@ import base64
 import json
 from datetime import datetime
 
-class CustomJSONEncoder(json.JSONEncoder):
+class CustomJSONEncoderWork(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
@@ -24,7 +24,7 @@ class Work:
             'iterations': self.iterations,
             'data': encoded_data.decode('utf-8'),
             'created_time': self.created_time
-        }, cls=CustomJSONEncoder)
+        }, cls=CustomJSONEncoderWork)
 
     @classmethod
     def from_json(cls, json_str):
@@ -45,5 +45,12 @@ class CompletedWork:
 
     @classmethod
     def from_json(cls, json_str):
-        data = json.loads(json_str)
+        data =  json.loads(json_str)
+        print("from_json: " + data['value'])
         return cls(data['id'], data['value'])
+
+    def __str__(self):
+        return self.to_json()
+
+    def __repr__(self):
+        return self.to_json()
