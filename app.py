@@ -171,17 +171,19 @@ def spawn_empty_worker():
 #TODO remove this endpoint when finish debugging
 @app.route('/spawn_worker', methods=['POST'])
 def spawn_worker():
-    if(worker != None):
+    if(endpoint != None):
         key_name = request.args.get('keyName')
         security_group = request.args.get('securityGroup')
-        woker_name = "worker_456"   
-        parent_private_ip = get_private_ip()
+        parent_private_ip = request.args.get('parentIp')
+        woker_name = "worker_456"
 
-        public_ip, instance_id = worker.spawn_worker(woker_name, key_name, security_group, parent_private_ip)
+        print(f"key_name: {key_name}, security_group: {security_group}, woker_name: {woker_name}, parent_private_ip: {parent_private_ip}")
+
+        public_ip, instance_id = endpoint.spawn_worker(woker_name, key_name, security_group, parent_private_ip)
 
         return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
 
-    return jsonify({'message': 'Worker not initialized.'}), 404
+    return jsonify({'message': 'Endpoint not initialized.'}), 404
 
 @app.route('/shutdown', methods=['POST'])
 def shutdown_os():
@@ -225,8 +227,6 @@ class EndPointNode:
         self.security_group = security_group
         self.worker_id_counter = 1
 
-    # R TODO fix method
-    # add  a backgrround thread at main if EndpointNode
     def spawn_worker_if_needed(self):
         while True:
             if not workQueue.empty() and (datetime.now() - workQueue.queue[0].created_time) > timedelta(seconds=15):
@@ -244,9 +244,9 @@ class EndPointNode:
                 print("spawn_worker_if_needed: workQueue is empty or last work created less than 15 seconds ago.")
             
                 
-            print("spawn_worker_if_needed: sleeping for 2 seconds.")
+            print("spawn_worker_if_needed: sleeping for 15 seconds.")
             #TODO change sleep to 0.1
-            time.sleep(2)
+            time.sleep(15)
             
             # TODO check if needed
             # else:
@@ -268,8 +268,6 @@ class EndPointNode:
         workers.append(node_name)
 
         return public_ip, instance_id
-
-        return jsonify({'instance_id': instance_id, 'public_ip': public_ip}), 200
 
 
 class WorkerNode:
@@ -395,7 +393,7 @@ class WorkerNode:
         try:
             response = requests.post("http://" + self.parentIP + ":5000/workerDone?worker_name=" + self.name, timeout=5)
             if response != None:
-                print("kill_myself (status code" + response.status_code + "): " + response.text)
+                print("kill_myself (status code" + str(response.status_code) + "): " + response.text)
         except requests.exceptions.Timeout:
             print("kill_myself: Timeout error")
 
