@@ -9,6 +9,7 @@ import subprocess
 import threading
 import time
 import requests
+import base64
 from model import Work, CompletedWork
 import socket
 
