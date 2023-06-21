@@ -9,46 +9,7 @@ import subprocess
 import threading
 import time
 import requests
-
-# TODO take this to different file
-import json
-
-class Work:
-    def __init__(self, work_id, iterations, data, created_time):
-        self.id = work_id
-        self.iterations = iterations
-        self.data = data
-        self.created_time = created_time
-
-    def to_json(self):
-        return json.dumps({
-            'id': self.id,
-            'iterations': self.iterations,
-            'data': self.data,
-            'created_time': self.created_time
-        })
-
-    @classmethod
-    def from_json(cls, json_str):
-        data = json.loads(json_str)
-        return cls(data['id'], data['iterations'], data['data'], data['created_time'])
-
-class CompletedWork:
-    def __init__(self, work_id, value):
-        self.id = work_id
-        self.value = value
-
-    def to_json(self):
-        return json.dumps({
-            'id': self.id,
-            'value': self.value
-        })
-
-    @classmethod
-    def from_json(cls, json_str):
-        data = json.loads(json_str)
-        return cls(data['id'], data['value'])
-
+from model import Work, CompletedWork
 
 app = Flask(__name__)
 
@@ -91,7 +52,7 @@ def get_arguments():
         'workers':  workers,
         'workCompleteSize': len(workComplete),
         'workQueueSize': workQueue.qsize(),
-        'workComplete': workComplete
+        'workComplete': str(workComplete)
     }
     return jsonify(serverState), 200
 
@@ -175,7 +136,9 @@ def pull_completed():
     #         results.extend(otherNode.pullCompleteInternal(n - len(results)))
     #     except:
     #         pass
-    return jsonify(completed_items), 200
+
+    workCompleteJson = str(completed_items)
+    return jsonify(workCompleteJson), 200
 
 # create function that get ip and top and send a POST request to /pullCompleted
 def pull_completed_internal(ip, top):
@@ -183,32 +146,6 @@ def pull_completed_internal(ip, top):
     response = requests.post(url)
     return response.json()
 
-
-# @app.route('/enqueueWork', methods=['POST'])
-# def enqueue_work():
-#     text = request.form['text']
-#     iterations = request.form['iterations']
-#     workQueue.put((text, iterations, datetime.now()))
-#     return jsonify({'message': 'Work enqueued successfully.'}), 200
-
-# @app.route('/giveMeWork', methods=['POST'])
-# def give_me_work():
-#     if not workQueue.empty():
-#         work = workQueue.get()
-#         return jsonify({'text': work[0], 'iterations': work[1]}), 200
-#     else:
-#         return jsonify({'message': 'No work available.'}), 204
-
-# @app.route('/pullComplete', methods=['POST'])
-# def pull_complete():
-#     n = int(request.form['n'])
-#     results = workComplete[:n]
-#     # if len(results) < n:
-#     #     try:
-#     #         results.extend(otherNode.pullCompleteInternal(n - len(results)))
-#     #     except:
-#     #         pass
-#     return jsonify(results), 200
 
 #TODO remove this endpoint when finish debugging
 @app.route('/spawn_empty_worker', methods=['POST'])
@@ -362,7 +299,7 @@ class WorkerNode:
                 if work != None:
                     print("Got work from node:" + nodeIP)
                     result = self.work(work.data, work.iterations)
-                    self.completed_work(nodeIP, work.work_id, result)
+                    self.send_completed_work(nodeIP, work.work_id, result)
                     self.lastWorkTime = time.time()
                 else:
                     print("No work available for node:" + nodeIP)
@@ -383,17 +320,17 @@ class WorkerNode:
 
         return None
 
-    def completed_work(self, ip, work_id, result):
-        # Send the result to the node with the given IP, using http request to port 5000 and endppoint /workCompleted
-        # Write your code here
-        completedWork = CompletedWork(work_id, result)
-        print("completed_work: " + completedWork.to_json())
+    def send_completed_work(self, ip, work_id, result):
+        encoded_result = base64.b64encode(result)
+        encoded_result = encoded_result.decode('utf-8')
+        completedWork = CompletedWork(work_id, encoded_result)
+        print("send_completed_work: " + completedWork.to_json())
         try:
-            response = requests.post("http://" + ip + ":5000/workCompleted", json=completedWork.to_json())
-            if respons != None:
-                print("completed_work (status code" + response.status_code + "): " + response.text)
+            response = requests.post("http://" + ip + ":" + port + "/postCompletedWork", data=completedWork.to_json())
+            if response != None:
+                print("send_completed_work (status code" + str(response.status_code) + "): " + response.text)
         except requests.exceptions.Timeout:
-            print("completed_work: Timeout error")
+            print("send_completed_work: Timeout error")
 
     def set_parent_ip(self, ip):
         self.parentIP = ip
