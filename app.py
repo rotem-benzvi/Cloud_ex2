@@ -206,7 +206,7 @@ def spawn_worker():
 def shutdown_os():
     if(worker != None):
         # Execute the shutdown command
-        worker.shutdown()
+        worker.shutdown_os()
 
         # Return a response indicating that the shutdown command has been initiated
         return jsonify({'message': 'Shutdown initiated successfully.'}), 200
