@@ -1,16 +1,3 @@
-#install all requrments
-
-# Install Python 3
-apt-get update
-apt-get install -y python3
-
-# Install pip3
-apt-get install -y python3-pip
-
-# Install boto3 library
-pip3 install boto3
-
-
 KEY_NAME="eladkey"
 KEY_PEM="$KEY_NAME.pem"
 
