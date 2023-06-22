@@ -70,8 +70,9 @@ def create_instance(key_name, security_group, node_name, node_kind, parent_priva
 
     describe_instances_response = ec2_client.describe_instances(InstanceIds=[instance_id])
     public_ip = describe_instances_response["Reservations"][0]["Instances"][0]["PublicIpAddress"]
+    private_ip = describe_instances_response["Reservations"][0]["Instances"][0]["PrivateIpAddress"]
 
-    return public_ip, instance_id
+    return public_ip, instance_id, private_ip
 
 # Example usage
 
@@ -92,9 +93,9 @@ if __name__ == '__main__':
     node_name = args.name   
     node_kind = args.kind
     private_ip = "empty"
-    public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, private_ip)
+    public_ip, instance_id, private_ip = create_instance(key_name, security_group, node_name, node_kind, private_ip)
 
     # Enable print statements
     sys.stdout = sys.__stdout__  # Restore the standard output
-    print(public_ip +","+ instance_id)
+    print(public_ip + "," + instance_id + "," + private_ip)
 

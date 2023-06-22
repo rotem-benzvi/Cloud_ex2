@@ -12,6 +12,7 @@ import requests
 import base64
 from model import Work, CompletedWork
 import socket
+import json
 
 def get_private_ip():
     # Get the hostname
@@ -151,8 +152,6 @@ def pull_completed():
     if len(completed_items) < top and otherNodeIp != None:
         try:
             other_completed = json.loads(pull_completed_internal(otherNodeIp, top - len(completed_items)))
-            print("other_completed: " + str(other_completed))
-
             completed_work_list = []
             for item in other_completed:
                 completed_work = CompletedWork(item['id'], item['value'])

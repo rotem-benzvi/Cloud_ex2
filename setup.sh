@@ -72,9 +72,9 @@ NAME="endpoint_node_1"
 echo "Creating $KIND with parameters: -name $NAME -name $NAME -kind $KIND -key_name $KEY_NAME -security_group $SEC_GRP"
 NODE1_OUTPUT=$(python3 create_node.py -name $NAME -kind $KIND -key_name $KEY_NAME -security_group $SEC_GRP)
 
-IFS=',' read -r NODE1_PUBLIC_IP NODE1_INSTANCE_ID <<< "$NODE1_OUTPUT"
+IFS=',' read -r NODE1_PUBLIC_IP NODE1_INSTANCE_ID NODE1_PRIVATE_IP <<< "$NODE1_OUTPUT"
 
-echo "New instance $KIND ($NAME) : $NODE1_INSTANCE_ID @ $NODE1_PUBLIC_IP"
+echo "New instance $KIND ($NAME) : $NODE1_INSTANCE_ID @ $NODE1_PUBLIC_IP @ $NODE1_PRIVATE_IP"
 
 echo "to connect to node 1:"
 echo "ssh -i $KEY_PEM -o 'StrictHostKeyChecking=no' -o 'ConnectionAttempts=10' ubuntu@$NODE1_PUBLIC_IP"
@@ -85,9 +85,9 @@ NAME="endpoint_node_2"
 echo "Creating $KIND with parameters: -name $NAME -name $NAME -kind $KIND -key_name $KEY_NAME -security_group $SEC_GRP"
 NODE2_OUTPUT=$(python3 create_node.py -name $NAME -kind $KIND -key_name $KEY_NAME -security_group $SEC_GRP)
 
-IFS=',' read -r NODE2_PUBLIC_IP NODE2_INSTANCE_ID <<< "$NODE2_OUTPUT"
+IFS=',' read -r NODE2_PUBLIC_IP NODE2_INSTANCE_ID NODE2_PRIVATE_IP <<< "$NODE2_OUTPUT"
 
-echo "New instance $KIND ($NAME) : $NODE2_INSTANCE_ID @ $NODE2_PUBLIC_IP"
+echo "New instance $KIND ($NAME) : $NODE2_INSTANCE_ID @ $NODE2_PUBLIC_IP @ $NODE2_PRIVATE_IP"
 
 echo "to connect to node 2:"
 echo "ssh -i $KEY_PEM -o 'StrictHostKeyChecking=no' -o 'ConnectionAttempts=10' ubuntu@$NODE2_PUBLIC_IP"
@@ -100,11 +100,11 @@ echo "test that it all worked for node 2, node status: "
 curl  --retry-connrefused --retry 10 --retry-delay 60  http://$NODE2_PUBLIC_IP:5000/getStatus
 
 #set each node is other node's neighbor IP 
-echo "Set node 1($NODE1_PUBLIC_IP), node 2 ip($NODE2_PUBLIC_IP)"
-curl -X POST "http://$NODE1_PUBLIC_IP:5000/setOtherNodeIp?ip=$NODE2_PUBLIC_IP"
+echo "Set node 1($NODE1_PUBLIC_IP), node 2 ip($NODE2_PRIVATE_IP)"
+curl -X POST "http://$NODE1_PUBLIC_IP:5000/setOtherNodeIp?ip=$NODE2_PRIVATE_IP"
 
-echo "Set node 2($NODE2_PUBLIC_IP), node 1 ip($NODE1_PUBLIC_IP)"
-curl -X POST "http://$NODE2_PUBLIC_IP:5000/setOtherNodeIp?ip=$NODE1_PUBLIC_IP"
+echo "Set node 2($NODE2_PUBLIC_IP), node 1 ip($NODE1_PRIVATE_IP)"
+curl -X POST "http://$NODE2_PUBLIC_IP:5000/setOtherNodeIp?ip=$NODE1_PRIVATE_IP"
 
 #Check that we set IP correctly
 echo "test that it all worked for node 1, node status: "
