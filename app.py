@@ -147,16 +147,32 @@ def pull_completed():
     top = int(request.args.get('top'))
     completed_items = workComplete[-top:]
     del workComplete[-top:]
-    # if len(results) < n:
-    #     try:
-    #         results.extend(otherNode.pullCompleteInternal(n - len(results)))
-    #     except:
-    #         pass
+    other_completed = []
+    if len(completed_items) < top and otherNodeIp != None:
+        try:
+            other_completed = json.loads(pull_completed_internal(otherNodeIp, top - len(completed_items)))
+            print("other_completed: " + str(other_completed))
+
+            completed_work_list = []
+            for item in other_completed:
+                completed_work = CompletedWork(item['id'], item['value'])
+                completed_items.append(completed_work)
+        except:
+            pass
 
     workCompleteJson = str(completed_items)
     return jsonify(workCompleteJson), 200
 
 
+def pull_completed_internal(ip, top):
+    try:
+        print('Pulling completed work from ' + ip + ' with top ' + str(top))
+        response = requests.post('http://' + ip + ':5000/pullCompleted?top=' + str(top), timeout=4)
+        print("pull_completed_internal response: " + response.text)
+        return response.json()
+    except Exception as e:
+        print("pull_completed_internal failed on : " + str(e))
+    return "[]"
 
 ############################
 #    For Testing Purposes  #
@@ -190,7 +206,7 @@ def spawn_worker():
 def shutdown_os():
     if(worker != None):
         # Execute the shutdown command
-        worker.shutdown()
+        worker.shutdown_os()
 
         # Return a response indicating that the shutdown command has been initiated
         return jsonify({'message': 'Shutdown initiated successfully.'}), 200
@@ -345,8 +361,9 @@ class WorkerNode:
         endpoint_nodes_ips_thread.start()
         
         # Take different node every time
+        timeToGiveUp = 600
         self.lastWorkTime = time.time()
-        while not self.shouldShutdown and (time.time() - self.lastWorkTime) < 600:
+        while not self.shouldShutdown and (time.time() - self.lastWorkTime) < timeToGiveUp:
             for nodeIP in self.endpointNodesIPs:
                 work = self.get_work(nodeIP)
                 if work != None:
@@ -357,10 +374,8 @@ class WorkerNode:
                 else:
                     print("No work available for node:" + nodeIP)
             
-            # TODO change the timeout to 0.1
-            time.sleep(5)
+            time.sleep(0.1)
 
-        # TODO implelment logic to shutdown the worker node here 
         self.kill_myself()
 
     def get_work(self, ip):
@@ -398,8 +413,7 @@ class WorkerNode:
         except requests.exceptions.Timeout:
             print("kill_myself: Timeout error")
 
-        #TODO shutdown the worker node
-        #self.shutdown_os()
+        self.shutdown_os()
 
     def shutdown_os(self):
         # Execute the shutdown command
