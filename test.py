@@ -4,6 +4,7 @@ import requests
 import os
 import random
 import base64
+import json
 from model import Work, CompletedWork
 
 
@@ -18,10 +19,14 @@ def send_work(ip, port, iterations):
 
 #create a function that given ip and top will send a POST request to /pullCompleted with top as a query parameter
 def pull_completed_internal(ip, port, top):
-    print('Pulling completed work from ' + ip + ' with top ' + str(top))
-    respons = requests.post('http://' + ip + ':' + port + '/pullCompleted?top=' + str(top))
-    print("pull_completed_internal response: " + respons.text)
-    return respons.json()
+    try:
+        print('Pulling completed work from ' + ip + ' with top ' + str(top))
+        response = requests.post('http://' + ip + ':' + port + '/pullCompleted?top=' + str(top), timeout=4)
+        print("pull_completed_internal response: " + response.text)
+        return response.json()
+    except Exception as e:
+        print("pull_completed_internal failed on : " + str(e))
+    return "[]"
 
 #create a function that given ip call /getStatus and return the response
 def get_status(ip, port):
@@ -130,6 +135,22 @@ if __name__ == '__main__':
         pull_completed_internal(node_1_ip, port, 5)
         get_status(node_1_ip, port)
 
+
+    if type == "test2":
+        cw = CompletedWork("111", "test")
+        workComplete = [cw]
+        print("workComplete: " + str(workComplete))
+        
+        other_completed = json.loads(pull_completed_internal(node_1_ip, port, value))
+        print("other_completed: " + str(other_completed))
+
+        completed_work_list = []
+        for item in other_completed:
+            print("item: " + str(item))
+            completed_work = CompletedWork(item['id'], item['value'])
+            workComplete.append(completed_work)
+
+        print("final: " + str(workComplete))
 
     print("#########################################")
 

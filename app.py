@@ -147,16 +147,32 @@ def pull_completed():
     top = int(request.args.get('top'))
     completed_items = workComplete[-top:]
     del workComplete[-top:]
-    # if len(results) < n:
-    #     try:
-    #         results.extend(otherNode.pullCompleteInternal(n - len(results)))
-    #     except:
-    #         pass
+    other_completed = []
+    if len(completed_items) < top and otherNodeIp != None:
+        try:
+            other_completed = json.loads(pull_completed_internal(otherNodeIp, top - len(completed_items)))
+            print("other_completed: " + str(other_completed))
+
+            completed_work_list = []
+            for item in other_completed:
+                completed_work = CompletedWork(item['id'], item['value'])
+                completed_items.append(completed_work)
+        except:
+            pass
 
     workCompleteJson = str(completed_items)
     return jsonify(workCompleteJson), 200
 
 
+def pull_completed_internal(ip, top):
+    try:
+        print('Pulling completed work from ' + ip + ' with top ' + str(top))
+        response = requests.post('http://' + ip + ':5000/pullCompleted?top=' + str(top), timeout=4)
+        print("pull_completed_internal response: " + response.text)
+        return response.json()
+    except Exception as e:
+        print("pull_completed_internal failed on : " + str(e))
+    return "[]"
 
 ############################
 #    For Testing Purposes  #
