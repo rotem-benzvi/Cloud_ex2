@@ -261,14 +261,7 @@ class EndPointNode:
             
                 
             print("spawn_worker_if_needed: sleeping for 1 seconds.")
-            #TODO change sleep to 0.1
             time.sleep(1)
-            
-            # TODO check if needed
-            # else:
-            #     if otherNode.try_get_node_quota():
-            #         maxNumOfWorkers += 1
-            
 
     def spawn_worker(self, woker_name, key_name, security_group, parent_private_ip):
         node_name = woker_name
