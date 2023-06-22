@@ -254,8 +254,8 @@ class EndPointNode:
                     self.worker_id_counter += 1
                     parent_private_ip = get_private_ip()
 
-                    public_ip, instance_id = self.spawn_worker(woker_name, self.key_name, self.security_group, parent_private_ip)
-                    print(f"spawn_worker_if_needed: worker spawned successfully. public_ip: {public_ip} , instance_id: {instance_id}")
+                    public_ip, instance_id, private_ip = self.spawn_worker(woker_name, self.key_name, self.security_group, parent_private_ip)
+                    print(f"spawn_worker_if_needed: worker spawned successfully. public_ip: {public_ip} , instance_id: {instance_id}, private_ip: {private_ip}")
             else:
                 print("spawn_worker_if_needed: workQueue is empty or last work created less than 15 seconds ago.")
             
@@ -280,10 +280,10 @@ class EndPointNode:
         print("spawn_worker: node_kind = " + node_kind)
         print("spawn_worker: private_ip = " + parent_private_ip)
 
-        public_ip, instance_id = create_instance(key_name, security_group, node_name, node_kind, parent_private_ip)
+        public_ip, instance_id, private_ip = create_instance(key_name, security_group, node_name, node_kind, parent_private_ip)
         workers.append(node_name)
 
-        return public_ip, instance_id
+        return public_ip, instance_id, private_ip
 
 
 class WorkerNode:
