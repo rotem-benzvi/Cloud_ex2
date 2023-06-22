@@ -361,8 +361,9 @@ class WorkerNode:
         endpoint_nodes_ips_thread.start()
         
         # Take different node every time
+        timeToGiveUp = 120
         self.lastWorkTime = time.time()
-        while not self.shouldShutdown and (time.time() - self.lastWorkTime) < 600:
+        while not self.shouldShutdown and (time.time() - self.lastWorkTime) < timeToGiveUp:
             for nodeIP in self.endpointNodesIPs:
                 work = self.get_work(nodeIP)
                 if work != None:
@@ -373,10 +374,8 @@ class WorkerNode:
                 else:
                     print("No work available for node:" + nodeIP)
             
-            # TODO change the timeout to 0.1
-            time.sleep(5)
+            time.sleep(0.1)
 
-        # TODO implelment logic to shutdown the worker node here 
         self.kill_myself()
 
     def get_work(self, ip):
@@ -414,8 +413,7 @@ class WorkerNode:
         except requests.exceptions.Timeout:
             print("kill_myself: Timeout error")
 
-        #TODO shutdown the worker node
-        #self.shutdown_os()
+        self.shutdown_os()
 
     def shutdown_os(self):
         # Execute the shutdown command
