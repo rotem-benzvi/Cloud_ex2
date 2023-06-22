@@ -361,7 +361,7 @@ class WorkerNode:
         endpoint_nodes_ips_thread.start()
         
         # Take different node every time
-        timeToGiveUp = 120
+        timeToGiveUp = 600
         self.lastWorkTime = time.time()
         while not self.shouldShutdown and (time.time() - self.lastWorkTime) < timeToGiveUp:
             for nodeIP in self.endpointNodesIPs:
